@@ -91,20 +91,25 @@ export default class Enemy {
                 
                 const overlapDepthX = combinedHalfWidths - Math.abs(overlapX);
                 const overlapDepthY = combinedHalfHeights - Math.abs(overlapY);
+
+                const PUSH_BUFFER = 1; // Small buffer to prevent getting stuck
                 
                 if (overlapDepthX > 0 && overlapDepthY > 0) {
-                     // Since barrels only move down, we prioritize pushing the enemy down and sideways.
-                    
-                    // 1. Push enemy forward to clear the barrel.
-                    // Place the enemy's top edge just past the barrel's bottom edge.
-                    this.y = barrel.y + barrel.height;
-                    
-                    // 2. Push enemy sideways.
-                    const pushDirection = Math.sign(overlapX);
-                    // If they are perfectly centered, pick a random direction to push.
-                    const finalPushDirection = pushDirection === 0 ? (Math.random() < 0.5 ? -1 : 1) : pushDirection;
-                    
-                    this.x += finalPushDirection * overlapDepthX;
+                    // Decide which direction to push based on the shallowest overlap.
+                    // This creates a more natural "sliding" effect.
+                    if (overlapDepthX < overlapDepthY) {
+                        // Horizontal overlap is smaller, so push sideways
+                        const pushDirection = Math.sign(overlapX);
+                        const finalPushDirection = pushDirection === 0 ? (Math.random() < 0.5 ? -1 : 1) : pushDirection;
+                        
+                        // Move the enemy just enough to be outside the barrel horizontally
+                        this.x = (barrel.x + barrel.width / 2) + (finalPushDirection * combinedHalfWidths) - (this.width / 2) + (finalPushDirection * PUSH_BUFFER);
+
+                    } else {
+                        // Vertical overlap is smaller, prioritize pushing forward.
+                        // This usually happens when the enemy is directly in front.
+                        this.y = barrel.y + barrel.height + PUSH_BUFFER;
+                    }
                 }
             }
         }
